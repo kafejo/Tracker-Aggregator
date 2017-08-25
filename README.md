@@ -19,8 +19,8 @@ Let's say we want to use Mixpanel and Intercom for tracking. We create simple cl
 
 class IntercomTracker: Tracker {
 
-    var eventTrackingRule: EventTrackingRule? = nil
-    var propertyTrackingRule: PropertyTrackingRule? = nil
+    let eventTrackingRule: EventTrackingRule? = nil
+    let propertyTrackingRule: PropertyTrackingRule? = nil
 
     func track(event: TrackableEvent) {
         // Custom Intercom logic for how to track events
@@ -39,8 +39,8 @@ class IntercomTracker: Tracker {
 
 class MixpanelTracker: Tracker {
 
-    var eventTrackingRule: EventTrackingRule? = nil
-    var propertyTrackingRule: PropertyTrackingRule? = nil
+    let eventTrackingRule: EventTrackingRule? = nil
+    let propertyTrackingRule: PropertyTrackingRule? = nil
 
     func track(event: TrackableEvent) {
         // Custom Mixpanel logic for how to track events
@@ -95,6 +95,29 @@ and now we track it
 ```swift
 let email = Email(value: "test@test.com")
 GlobalTracker.update(property: email)
+```
+
+## Rules
+You may want to allow only certain events or properties to be tracker by specific trackers. To do so, each tracker can specify `EventTrackingRule` and `PropertyTrackingRule`. In the rule you have to define either only allowed events/properties or prohibit only certain events/properties. Let's prohibit `Mixpanel` to track `AppOpen` event.
+
+```swift
+// Our Mixpanel Tracker definition from above
+
+class MixpanelTracker: Tracker {
+    
+    // Set event tracking rule to prohibit AppOpen event from being tracked
+    // That means function track(event:) for this tracker wont be called for AppOpen event
+    let eventTrackingRule: EventTrackingRule? = EventTrackingRule(.prohibit, types: [AppOpen.self])
+    let propertyTrackingRule: PropertyTrackingRule? = nil
+
+    func track(event: TrackableEvent) {
+        // Custom Mixpanel logic for how to track events
+    }
+
+    func track(property: TrackableProperty) {
+        // Custom Mixpanel logic for how to track properties
+    }
+}
 ```
 
 # Notes
