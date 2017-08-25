@@ -60,7 +60,7 @@ extension String: TrackableValueType {}
 extension Int: TrackableValueType {}
 
 protocol TrackableProperty {
-    var key: String { get }
+    var identifier: String { get }
     var trackedValue: TrackableValueType { get }
 
     func generateUpdateEvents() -> [TrackableEvent]
@@ -109,16 +109,21 @@ class GlobalTracker {
 
     class func update(property: TrackableProperty) {
         shared.trackers.forEach { tracker in
+            let action = {
+                tracker.track(property: property)
+                property.generateUpdateEvents().forEach(trackEvent)
+            }
+
             if let rule = tracker.propertyTrackingRule {
                 let isIncluded = rule.types.contains(where: { type(of: property) == $0 })
 
                 if isIncluded && rule.rule == .allow {
-                    tracker.track(property: property)
+                    action()
                 } else if !isIncluded && rule.rule == .prohibit {
-                    tracker.track(property: property)
+                    action()
                 }
             } else {
-                tracker.track(property: property)
+                action()
             }
         }
     }

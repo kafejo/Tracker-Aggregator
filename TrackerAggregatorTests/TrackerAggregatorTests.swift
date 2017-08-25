@@ -31,6 +31,17 @@ struct TestEvent: TrackableEvent {
     let metadata: [String : Any] = ["test": "m1"]
 }
 
+struct TestProperty: TrackableProperty {
+    let identifier: String = "name"
+    let value: String
+
+    var trackedValue: TrackableValueType { return value }
+
+    func generateUpdateEvents() -> [TrackableEvent] {
+        return []
+    }
+}
+
 class TrackerAggregatorTests: XCTestCase {
     
     override func setUp() {
@@ -44,9 +55,6 @@ class TrackerAggregatorTests: XCTestCase {
     }
     
     func testEventTracking() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-
         // given
         let testableTracker = TestableTracker()
         let testEvent = TestEvent()
@@ -62,7 +70,18 @@ class TrackerAggregatorTests: XCTestCase {
     }
 
     func testUserPropertyTracking() {
+        // given
+        let testableTracker = TestableTracker()
+        let testProperty = TestProperty(value: "New Name")
 
+        // when
+        GlobalTracker.set(trackers: [testableTracker])
+        GlobalTracker.update(property: testProperty)
+
+        // then 
+        XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
+        XCTAssertEqual(testableTracker.trackedProperty?.identifier ?? "", "name")
+        XCTAssertEqual((testableTracker.trackedProperty?.trackedValue as? String) ?? "", "New Name")
     }
 
 }
