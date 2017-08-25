@@ -10,6 +10,7 @@
 		F5442A6E1F502EFB0044A951 /* TrackerAggregator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5442A641F502EFB0044A951 /* TrackerAggregator.framework */; };
 		F5442A731F502EFB0044A951 /* TrackerAggregatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5442A721F502EFB0044A951 /* TrackerAggregatorTests.swift */; };
 		F5442A751F502EFB0044A951 /* TrackerAggregator.h in Headers */ = {isa = PBXBuildFile; fileRef = F5442A671F502EFB0044A951 /* TrackerAggregator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F5442A7F1F502F2C0044A951 /* TrackerAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5442A7E1F502F2C0044A951 /* TrackerAggregator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +30,7 @@
 		F5442A6D1F502EFB0044A951 /* TrackerAggregatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackerAggregatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5442A721F502EFB0044A951 /* TrackerAggregatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerAggregatorTests.swift; sourceTree = "<group>"; };
 		F5442A741F502EFB0044A951 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F5442A7E1F502F2C0044A951 /* TrackerAggregator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TrackerAggregator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +75,7 @@
 			children = (
 				F5442A671F502EFB0044A951 /* TrackerAggregator.h */,
 				F5442A681F502EFB0044A951 /* Info.plist */,
+				F5442A7E1F502F2C0044A951 /* TrackerAggregator.swift */,
 			);
 			path = TrackerAggregator;
 			sourceTree = "<group>";
@@ -149,6 +152,7 @@
 					F5442A631F502EFB0044A951 = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = KP4BR89AHQ;
+						LastSwiftMigration = 0830;
 						ProvisioningStyle = Automatic;
 					};
 					F5442A6C1F502EFB0044A951 = {
@@ -198,6 +202,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5442A7F1F502F2C0044A951 /* TrackerAggregator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -324,6 +329,7 @@
 		F5442A791F502EFB0044A951 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = KP4BR89AHQ;
@@ -336,6 +342,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.rubicoin.TrackerAggregator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -343,6 +350,7 @@
 		F5442A7A1F502EFB0044A951 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = KP4BR89AHQ;
@@ -362,6 +370,7 @@
 		F5442A7C1F502EFB0044A951 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				DEVELOPMENT_TEAM = KP4BR89AHQ;
 				INFOPLIST_FILE = TrackerAggregatorTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -374,6 +383,7 @@
 		F5442A7D1F502EFB0044A951 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				DEVELOPMENT_TEAM = KP4BR89AHQ;
 				INFOPLIST_FILE = TrackerAggregatorTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";

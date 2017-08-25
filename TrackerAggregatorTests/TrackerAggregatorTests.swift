@@ -9,6 +9,28 @@
 import XCTest
 @testable import TrackerAggregator
 
+class TestableTracker: Tracker {
+
+    let eventTrackingRule: EventTrackingRule? = nil
+    let propertyTrackingRule: UserPropertyTrackingRule? = nil
+
+    var trackedEvent: TrackableEvent?
+
+    func track(event: TrackableEvent) {
+        trackedEvent = event
+    }
+
+    var trackedUserProperty: TrackableUserProperty?
+    func track(userProperty: TrackableUserProperty) {
+        trackedUserProperty = userProperty
+    }
+}
+
+struct TestEvent: TrackableEvent {
+    let identifier: String = "id"
+    let metadata: [String : Any] = ["test": "m1"]
+}
+
 class TrackerAggregatorTests: XCTestCase {
     
     override func setUp() {
@@ -21,16 +43,22 @@ class TrackerAggregatorTests: XCTestCase {
         super.tearDown()
     }
     
-    func testExample() {
+    func testEventTracking() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
+
+        // given
+        let testableTracker = TestableTracker()
+        let testEvent = TestEvent()
+
+        // when
+        GlobalTracker.set(trackers: [testableTracker])
+        GlobalTracker.trackEvent(event: testEvent)
+
+        // then
+        XCTAssertNotNil(testableTracker.trackedEvent, "Event wasn't tracked")
+        XCTAssertEqual(testableTracker.trackedEvent?.identifier ?? "", "id")
+        XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
     }
-    
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-    
+
 }
