@@ -11,8 +11,8 @@ import XCTest
 
 class TestableTracker: Tracker {
 
-    let eventTrackingRule: EventTrackingRule? = nil
-    let propertyTrackingRule: PropertyTrackingRule? = nil
+    var eventTrackingRule: EventTrackingRule? = nil
+    var propertyTrackingRule: PropertyTrackingRule? = nil
 
     var trackedEvent: TrackableEvent?
 
@@ -31,11 +31,27 @@ struct TestEvent: TrackableEvent {
     let metadata: [String : Any] = ["test": "m1"]
 }
 
+struct TestEvent2: TrackableEvent {
+    let identifier: String = "id"
+    let metadata: [String : Any] = ["test": "m1"]
+}
+
 struct TestProperty: TrackableProperty {
     let identifier: String = "name"
     let value: String
 
     var trackedValue: TrackableValueType { return value }
+}
+
+struct TestUpdateProperty: TrackableProperty {
+    let identifier: String = "name2"
+    let value: String
+
+    var trackedValue: TrackableValueType { return value }
+
+    func generateUpdateEvents() -> [TrackableEvent] {
+        return [TestEvent()]
+    }
 }
 
 class TrackerAggregatorTests: XCTestCase {
@@ -80,4 +96,112 @@ class TrackerAggregatorTests: XCTestCase {
         XCTAssertEqual((testableTracker.trackedProperty?.trackedValue as? String) ?? "", "New Name")
     }
 
+    func testUpdateEvents() {
+        // given
+        let testProperty = TestUpdateProperty(value: "New Email")
+        let testableTracker = TestableTracker()
+
+        // when
+        GlobalTracker.set(trackers: [testableTracker])
+        GlobalTracker.update(property: testProperty)
+
+        // then
+        XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+        XCTAssertEqual(testableTracker.trackedEvent?.identifier ?? "", "id")
+        XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
+    }
+
+    func testProhibitEventRule() {
+        // given
+        let testableTracker = TestableTracker()
+        let eventRule = EventTrackingRule(.prohibit, types: [TestEvent.self])
+        testableTracker.eventTrackingRule = eventRule
+        let event = TestEvent()
+        let event2 = TestEvent2()
+
+        GlobalTracker.set(trackers: [testableTracker])
+
+        // when
+        GlobalTracker.trackEvent(event: event)
+
+        // then
+        XCTAssertNil(testableTracker.trackedEvent, "Property was tracked even when rulled out")
+
+        // when
+        testableTracker.trackedEvent = nil
+        GlobalTracker.trackEvent(event: event2)
+
+        // then
+        XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+    }
+
+    func testAllowEventRule() {
+        // given
+        let testableTracker = TestableTracker()
+        let eventRule = EventTrackingRule(.allow, types: [TestEvent.self])
+        testableTracker.eventTrackingRule = eventRule
+        let event = TestEvent()
+        let event2 = TestEvent2()
+
+        GlobalTracker.set(trackers: [testableTracker])
+
+        // when
+        GlobalTracker.trackEvent(event: event)
+
+        // then
+        XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+
+        // when
+        testableTracker.trackedEvent = nil
+        GlobalTracker.trackEvent(event: event2)
+
+        // then
+        XCTAssertNil(testableTracker.trackedEvent, "Property was tracked even when rulled out")
+    }
+
+    func testProhibitPropertyRule() {
+        // given
+        let testableTracker = TestableTracker()
+        let propertyRule = PropertyTrackingRule(.prohibit, types: [TestProperty.self])
+        testableTracker.propertyTrackingRule = propertyRule
+        let prohibitedProperty = TestProperty(value: "New Value")
+        let allowedProperty = TestUpdateProperty(value: "New Value")
+        GlobalTracker.set(trackers: [testableTracker])
+
+        // when
+        GlobalTracker.update(property: prohibitedProperty)
+
+        // then
+        XCTAssertNil(testableTracker.trackedProperty, "Property was tracked even when rulled out")
+
+        // when
+        testableTracker.trackedProperty = nil
+        GlobalTracker.update(property: allowedProperty)
+
+        // then
+        XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
+    }
+
+    func testAllowPropertyRule() {
+        // given
+        let testableTracker = TestableTracker()
+        let propertyRule = PropertyTrackingRule(.allow, types: [TestProperty.self])
+        testableTracker.propertyTrackingRule = propertyRule
+        let allowedProperty = TestProperty(value: "New Value")
+        let prohibitedProperty = TestUpdateProperty(value: "New Value")
+        GlobalTracker.set(trackers: [testableTracker])
+
+        // when
+        GlobalTracker.update(property: prohibitedProperty)
+
+        // then
+        XCTAssertNil(testableTracker.trackedProperty, "Property was tracked even when rulled out")
+
+        // when
+        testableTracker.trackedProperty = nil
+        GlobalTracker.update(property: allowedProperty)
+
+        // then
+        XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
+    }
 }
