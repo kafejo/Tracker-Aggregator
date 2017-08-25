@@ -66,6 +66,12 @@ protocol TrackableProperty {
     func generateUpdateEvents() -> [TrackableEvent]
 }
 
+extension TrackableProperty {
+    func generateUpdateEvents() -> [TrackableEvent] {
+        return []
+    }
+}
+
 struct PropertyTrackingRule {
     let rule: TrackingRule
     let types: [TrackableProperty.Type]

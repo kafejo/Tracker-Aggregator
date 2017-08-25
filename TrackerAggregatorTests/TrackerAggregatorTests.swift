@@ -36,10 +36,6 @@ struct TestProperty: TrackableProperty {
     let value: String
 
     var trackedValue: TrackableValueType { return value }
-
-    func generateUpdateEvents() -> [TrackableEvent] {
-        return []
-    }
 }
 
 class TrackerAggregatorTests: XCTestCase {
