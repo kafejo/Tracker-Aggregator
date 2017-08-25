@@ -21,13 +21,13 @@ protocol EventTrackable {
     func track(event: TrackableEvent)
 }
 
-protocol UserPropertyTrackable {
-    var propertyTrackingRule: UserPropertyTrackingRule? { get }
+protocol PropertyTrackable {
+    var propertyTrackingRule: PropertyTrackingRule? { get }
 
-    func track(userProperty: TrackableUserProperty)
+    func track(property: TrackableProperty)
 }
 
-protocol Tracker: EventTrackable, UserPropertyTrackable {}
+protocol Tracker: EventTrackable, PropertyTrackable {}
 
 // MARK: - Event tracking
 
@@ -51,7 +51,7 @@ struct EventTrackingRule {
     }
 }
 
-// MARK: - User Property tracking
+// MARK: - Property tracking
 
 protocol TrackableValueType { }
 
@@ -59,18 +59,18 @@ extension String: TrackableValueType {}
 
 extension Int: TrackableValueType {}
 
-protocol TrackableUserProperty {
+protocol TrackableProperty {
     var key: String { get }
     var trackedValue: TrackableValueType { get }
 
     func generateUpdateEvents() -> [TrackableEvent]
 }
 
-struct UserPropertyTrackingRule {
+struct PropertyTrackingRule {
     let rule: TrackingRule
-    let types: [TrackableUserProperty.Type]
+    let types: [TrackableProperty.Type]
 
-    init(_ rule: TrackingRule, types: [TrackableUserProperty.Type]) {
+    init(_ rule: TrackingRule, types: [TrackableProperty.Type]) {
         self.rule = rule
         self.types = types
     }
@@ -107,18 +107,18 @@ class GlobalTracker {
         }
     }
 
-    class func update(property: TrackableUserProperty) {
+    class func update(property: TrackableProperty) {
         shared.trackers.forEach { tracker in
             if let rule = tracker.propertyTrackingRule {
                 let isIncluded = rule.types.contains(where: { type(of: property) == $0 })
 
                 if isIncluded && rule.rule == .allow {
-                    tracker.track(userProperty: property)
+                    tracker.track(property: property)
                 } else if !isIncluded && rule.rule == .prohibit {
-                    tracker.track(userProperty: property)
+                    tracker.track(property: property)
                 }
             } else {
-                tracker.track(userProperty: property)
+                tracker.track(property: property)
             }
         }
     }

@@ -12,7 +12,7 @@ import XCTest
 class TestableTracker: Tracker {
 
     let eventTrackingRule: EventTrackingRule? = nil
-    let propertyTrackingRule: UserPropertyTrackingRule? = nil
+    let propertyTrackingRule: PropertyTrackingRule? = nil
 
     var trackedEvent: TrackableEvent?
 
@@ -20,9 +20,9 @@ class TestableTracker: Tracker {
         trackedEvent = event
     }
 
-    var trackedUserProperty: TrackableUserProperty?
-    func track(userProperty: TrackableUserProperty) {
-        trackedUserProperty = userProperty
+    var trackedProperty: TrackableProperty?
+    func track(property: TrackableProperty) {
+        trackedProperty = property
     }
 }
 
@@ -59,6 +59,10 @@ class TrackerAggregatorTests: XCTestCase {
         XCTAssertNotNil(testableTracker.trackedEvent, "Event wasn't tracked")
         XCTAssertEqual(testableTracker.trackedEvent?.identifier ?? "", "id")
         XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
+    }
+
+    func testUserPropertyTracking() {
+
     }
 
 }
