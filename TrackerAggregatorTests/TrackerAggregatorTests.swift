@@ -24,15 +24,19 @@ class TestableTracker: Tracker {
     func track(property: TrackableProperty) {
         trackedProperty = property
     }
+
+    func configure() {
+
+    }
 }
 
 struct TestEvent: TrackableEvent {
-    let identifier: String = "id"
+    let identifier: EventIdentifier = EventIdentifier(object: "Id", action: "Test")
     let metadata: [String : Any] = ["test": "m1"]
 }
 
 struct TestEvent2: TrackableEvent {
-    let identifier: String = "id"
+    let identifier: EventIdentifier = EventIdentifier(object: "Id2", action: "Test2")
     let metadata: [String : Any] = ["test": "m1"]
 }
 
@@ -77,7 +81,7 @@ class TrackerAggregatorTests: XCTestCase {
 
         // then
         XCTAssertNotNil(testableTracker.trackedEvent, "Event wasn't tracked")
-        XCTAssertEqual(testableTracker.trackedEvent?.identifier ?? "", "id")
+        XCTAssertEqual(testableTracker.trackedEvent?.identifier.stringValue ?? "", "Id: Test")
         XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
     }
 
@@ -107,7 +111,7 @@ class TrackerAggregatorTests: XCTestCase {
 
         // then
         XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
-        XCTAssertEqual(testableTracker.trackedEvent?.identifier ?? "", "id")
+        XCTAssertEqual(testableTracker.trackedEvent?.identifier.stringValue ?? "", "Id: Test")
         XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
     }
 

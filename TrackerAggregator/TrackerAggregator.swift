@@ -27,12 +27,49 @@ protocol PropertyTrackable {
     func track(property: TrackableProperty)
 }
 
-protocol Tracker: EventTrackable, PropertyTrackable {}
+extension PropertyTrackable {
+    var propertyTrackingRule: PropertyTrackingRule? {
+        return nil
+    }
+}
+
+extension EventTrackable {
+    var eventTrackingRule: EventTrackingRule? {
+        return nil
+    }
+}
+
+protocol TrackerConfigurable {
+    /// This is called before anything is tracked to configure each tracker. This is being called on background thread!
+    func configure()
+}
+
+protocol Tracker: EventTrackable, PropertyTrackable, TrackerConfigurable {}
+
+struct EventIdentifier {
+    let object: String
+    let action: String
+    let label: String?
+
+    init(object: String, action: String, label: String? = nil) {
+        self.object = object
+        self.action = action
+        self.label = label
+    }
+
+    var stringValue: String {
+        if let label = label {
+            return "\(object): \(action) - \(label)"
+        } else {
+            return "\(object): \(action)"
+        }
+    }
+}
 
 // MARK: - Event tracking
 
 protocol EventIdentifiable {
-    var identifier: String { get }
+    var identifier: EventIdentifier { get }
 }
 
 protocol MetadataConvertible {
@@ -56,7 +93,7 @@ struct EventTrackingRule {
 protocol TrackableValueType { }
 
 extension String: TrackableValueType {}
-
+extension Bool: TrackableValueType {}
 extension Int: TrackableValueType {}
 
 protocol TrackableProperty {
@@ -94,6 +131,12 @@ class GlobalTracker {
 
     class func set(trackers: [Tracker]) {
         shared.trackers = trackers
+    }
+
+    class func configureTrackers() {
+        DispatchQueue.global().async {
+            shared.trackers.forEach { $0.configure() }
+        }
     }
 
     class func trackEvent(event: TrackableEvent) {
