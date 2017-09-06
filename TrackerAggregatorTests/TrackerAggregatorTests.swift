@@ -14,19 +14,31 @@ class TestableTracker: Tracker {
     var eventTrackingRule: EventTrackingRule? = nil
     var propertyTrackingRule: PropertyTrackingRule? = nil
 
-    var trackedEvent: TrackableEvent?
+    var trackedEvent: TrackableEvent? {
+        didSet {
+            trackedEventCallback?()
+        }
+    }
+
+    var trackedEventCallback: (() -> Void)? = nil
 
     func track(event: TrackableEvent) {
         trackedEvent = event
     }
 
-    var trackedProperty: TrackableProperty?
+    var trackedPropertyCallback: (() -> Void)? = nil
+    var trackedProperty: TrackableProperty? {
+        didSet {
+            trackedPropertyCallback?()
+        }
+    }
+    
     func track(property: TrackableProperty) {
         trackedProperty = property
     }
 
     func configure() {
-
+        sleep(1)
     }
 }
 
@@ -74,45 +86,75 @@ class TrackerAggregatorTests: XCTestCase {
         // given
         let testableTracker = TestableTracker()
         let testEvent = TestEvent()
+        let globalTracker = GlobalTracker()
 
         // when
-        GlobalTracker.set(trackers: [testableTracker])
-        GlobalTracker.trackEvent(event: testEvent)
+        globalTracker.set(trackers: [testableTracker])
+        globalTracker.configureTrackers()
+        globalTracker.trackEvent(event: testEvent)
 
         // then
-        XCTAssertNotNil(testableTracker.trackedEvent, "Event wasn't tracked")
-        XCTAssertEqual(testableTracker.trackedEvent?.identifier.stringValue ?? "", "Id: Test")
-        XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
+
+        let exp = expectation(description: "Test")
+
+        testableTracker.trackedEventCallback = {
+            XCTAssertNotNil(testableTracker.trackedEvent, "Event wasn't tracked")
+            XCTAssertEqual(testableTracker.trackedEvent?.identifier.stringValue ?? "", "Id: Test")
+            XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
+            exp.fulfill()
+        }
+
+        self.waitForExpectations(timeout: 2.0)
     }
 
     func testUserPropertyTracking() {
         // given
         let testableTracker = TestableTracker()
         let testProperty = TestProperty(value: "New Name")
+        let globalTracker = GlobalTracker()
 
         // when
-        GlobalTracker.set(trackers: [testableTracker])
-        GlobalTracker.update(property: testProperty)
+        globalTracker.set(trackers: [testableTracker])
+        globalTracker.configureTrackers()
+        globalTracker.update(property: testProperty)
 
         // then 
-        XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
-        XCTAssertEqual(testableTracker.trackedProperty?.identifier ?? "", "name")
-        XCTAssertEqual((testableTracker.trackedProperty?.trackedValue as? String) ?? "", "New Name")
+
+        let exp = expectation(description: "Test")
+
+        testableTracker.trackedPropertyCallback = {
+            XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
+            XCTAssertEqual(testableTracker.trackedProperty?.identifier ?? "", "name")
+            XCTAssertEqual((testableTracker.trackedProperty?.trackedValue as? String) ?? "", "New Name")
+            exp.fulfill()
+        }
+
+        self.waitForExpectations(timeout: 2.0)
     }
 
     func testUpdateEvents() {
         // given
         let testProperty = TestUpdateProperty(value: "New Email")
         let testableTracker = TestableTracker()
+        let globalTracker = GlobalTracker()
 
         // when
-        GlobalTracker.set(trackers: [testableTracker])
-        GlobalTracker.update(property: testProperty)
+
+        globalTracker.set(trackers: [testableTracker])
+        globalTracker.configureTrackers()
+        globalTracker.update(property: testProperty)
 
         // then
-        XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
-        XCTAssertEqual(testableTracker.trackedEvent?.identifier.stringValue ?? "", "Id: Test")
-        XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
+        let exp = expectation(description: "Test")
+
+        testableTracker.trackedEventCallback = {
+            XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+            XCTAssertEqual(testableTracker.trackedEvent?.identifier.stringValue ?? "", "Id: Test")
+            XCTAssertEqual((testableTracker.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
+            exp.fulfill()
+        }
+
+        self.waitForExpectations(timeout: 2.0)
     }
 
     func testProhibitEventRule() {
@@ -121,22 +163,24 @@ class TrackerAggregatorTests: XCTestCase {
         let eventRule = EventTrackingRule(.prohibit, types: [TestEvent.self])
         testableTracker.eventTrackingRule = eventRule
         let event = TestEvent()
-        let event2 = TestEvent2()
+        let globalTracker = GlobalTracker()
 
-        GlobalTracker.set(trackers: [testableTracker])
-
-        // when
-        GlobalTracker.trackEvent(event: event)
-
-        // then
-        XCTAssertNil(testableTracker.trackedEvent, "Property was tracked even when rulled out")
+        globalTracker.set(trackers: [testableTracker])
 
         // when
-        testableTracker.trackedEvent = nil
-        GlobalTracker.trackEvent(event: event2)
+        globalTracker.trackEvent(event: event)
+        globalTracker.configureTrackers()
 
         // then
-        XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+        let exp = expectation(description: "Test")
+        exp.isInverted = true
+
+        testableTracker.trackedEventCallback = {
+            XCTAssertNil(testableTracker.trackedEvent, "Property was tracked even when rulled out")
+            exp.fulfill()
+        }
+
+        self.waitForExpectations(timeout: 2.0)
     }
 
     func testAllowEventRule() {
@@ -145,22 +189,23 @@ class TrackerAggregatorTests: XCTestCase {
         let eventRule = EventTrackingRule(.allow, types: [TestEvent.self])
         testableTracker.eventTrackingRule = eventRule
         let event = TestEvent()
-        let event2 = TestEvent2()
+        let globalTracker = GlobalTracker()
 
-        GlobalTracker.set(trackers: [testableTracker])
-
-        // when
-        GlobalTracker.trackEvent(event: event)
-
-        // then
-        XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+        globalTracker.set(trackers: [testableTracker])
+        globalTracker.configureTrackers()
 
         // when
-        testableTracker.trackedEvent = nil
-        GlobalTracker.trackEvent(event: event2)
+        globalTracker.trackEvent(event: event)
 
         // then
-        XCTAssertNil(testableTracker.trackedEvent, "Property was tracked even when rulled out")
+        let exp = expectation(description: "Test")
+
+        testableTracker.trackedEventCallback = {
+            XCTAssertNotNil(testableTracker.trackedEvent, "Property wasn't tracked")
+            exp.fulfill()
+        }
+
+        self.waitForExpectations(timeout: 2.0)
     }
 
     func testProhibitPropertyRule() {
@@ -169,21 +214,24 @@ class TrackerAggregatorTests: XCTestCase {
         let propertyRule = PropertyTrackingRule(.prohibit, types: [TestProperty.self])
         testableTracker.propertyTrackingRule = propertyRule
         let prohibitedProperty = TestProperty(value: "New Value")
-        let allowedProperty = TestUpdateProperty(value: "New Value")
-        GlobalTracker.set(trackers: [testableTracker])
+
+        let globalTracker = GlobalTracker()
+
+        globalTracker.set(trackers: [testableTracker])
 
         // when
-        GlobalTracker.update(property: prohibitedProperty)
+        globalTracker.update(property: prohibitedProperty)
 
         // then
-        XCTAssertNil(testableTracker.trackedProperty, "Property was tracked even when rulled out")
+        let exp = expectation(description: "Test")
+        exp.isInverted = true
 
-        // when
-        testableTracker.trackedProperty = nil
-        GlobalTracker.update(property: allowedProperty)
+        testableTracker.trackedPropertyCallback = {
+            XCTAssertNil(testableTracker.trackedProperty, "Property was tracked even when rulled out")
+            exp.fulfill()
+        }
 
-        // then
-        XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
+        self.waitForExpectations(timeout: 2.0)
     }
 
     func testAllowPropertyRule() {
@@ -191,21 +239,23 @@ class TrackerAggregatorTests: XCTestCase {
         let testableTracker = TestableTracker()
         let propertyRule = PropertyTrackingRule(.allow, types: [TestProperty.self])
         testableTracker.propertyTrackingRule = propertyRule
-        let allowedProperty = TestProperty(value: "New Value")
         let prohibitedProperty = TestUpdateProperty(value: "New Value")
-        GlobalTracker.set(trackers: [testableTracker])
+        let globalTracker = GlobalTracker()
+
+        globalTracker.set(trackers: [testableTracker])
 
         // when
-        GlobalTracker.update(property: prohibitedProperty)
+        globalTracker.update(property: prohibitedProperty)
 
         // then
-        XCTAssertNil(testableTracker.trackedProperty, "Property was tracked even when rulled out")
+        let exp = expectation(description: "Test")
+        exp.isInverted = true
 
-        // when
-        testableTracker.trackedProperty = nil
-        GlobalTracker.update(property: allowedProperty)
+        testableTracker.trackedPropertyCallback = {
+            XCTAssertNil(testableTracker.trackedProperty, "Property was tracked even when rulled out")
+            exp.fulfill()
+        }
 
-        // then
-        XCTAssertNotNil(testableTracker.trackedProperty, "Property wasn't tracked")
+        self.waitForExpectations(timeout: 2.0)
     }
 }

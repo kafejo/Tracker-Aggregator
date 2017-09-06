@@ -125,22 +125,53 @@ class GlobalTracker {
 
     private static let shared = GlobalTracker()
 
-    private init() {}
+    init() {}
 
-    var trackers: [Tracker] = []
-
-    class func set(trackers: [Tracker]) {
-        shared.trackers = trackers
-    }
-
-    class func configureTrackers() {
-        DispatchQueue.global().async {
-            shared.trackers.forEach { $0.configure() }
+    private var wasConfigured: Bool = false {
+        didSet {
+            if wasConfigured {
+                DispatchQueue.global().async {
+                    self.postponedEvents.forEach { self.trackEvent(event: $0) }
+                    self.postponedEvents.removeAll()
+                    self.postponedProperties.forEach { self.update(property: $0) }
+                    self.postponedProperties.removeAll()
+                }
+            }
         }
     }
 
-    class func trackEvent(event: TrackableEvent) {
-        shared.trackers.forEach { tracker in
+    private var postponedEvents: [TrackableEvent] = []
+    private var postponedProperties: [TrackableProperty] = []
+
+    private var trackers: [Tracker] = []
+
+    func set(trackers: [Tracker]) {
+        self.trackers = trackers
+    }
+
+    func configureTrackers() {
+        DispatchQueue.global().async {
+            self.trackers.forEach { $0.configure() }
+            self.wasConfigured = true
+        }
+    }
+
+    func trackEvent(event: TrackableEvent) {
+
+        if !wasConfigured {
+            postponedEvents.append(event)
+            // Should reschedule to be sent after configuration is complete
+            return
+        }
+
+        DispatchQueue.global().async {
+            self._trackEvent(event: event)
+        }
+    }
+
+    private func _trackEvent(event: TrackableEvent) {
+
+        trackers.forEach { tracker in
 
             if let rule = tracker.eventTrackingRule {
                 let isIncluded = rule.types.contains(where: { type(of: event) == $0 })
@@ -156,11 +187,23 @@ class GlobalTracker {
         }
     }
 
-    class func update(property: TrackableProperty) {
-        shared.trackers.forEach { tracker in
+    func update(property: TrackableProperty) {
+
+        if !wasConfigured {
+            postponedProperties.append(property)
+            return
+        }
+
+        DispatchQueue.global().async {
+            self._update(property: property)
+        }
+    }
+
+    private func _update(property: TrackableProperty) {
+        trackers.forEach { tracker in
             let action = {
                 tracker.track(property: property)
-                property.generateUpdateEvents().forEach(trackEvent)
+                property.generateUpdateEvents().forEach(self._trackEvent)
             }
 
             if let rule = tracker.propertyTrackingRule {
@@ -175,5 +218,27 @@ class GlobalTracker {
                 action()
             }
         }
+    }
+
+    // MARK: - Public API
+
+    /// Plug in trackers
+    class func set(trackers: [Tracker]) {
+        shared.set(trackers: trackers)
+    }
+
+    /// Configure trackers, must be called to be able to track. Event or Property track attepts prior configure are postponed.
+    class func configureTrackers() {
+        shared.configureTrackers()
+    }
+
+    /// Track event
+    class func trackEvent(event: TrackableEvent) {
+        shared.trackEvent(event: event)
+    }
+
+    /// Update property
+    class func update(property: TrackableProperty) {
+        shared.update(property: property)
     }
 }
