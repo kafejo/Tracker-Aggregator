@@ -91,7 +91,7 @@ class TrackerAggregatorTests: XCTestCase {
         // when
         globalTracker.set(trackers: [testableTracker])
         globalTracker.configureTrackers()
-        globalTracker.trackEvent(event: testEvent)
+        globalTracker.track(event: testEvent)
 
         // then
 
@@ -168,7 +168,7 @@ class TrackerAggregatorTests: XCTestCase {
         globalTracker.set(trackers: [testableTracker])
 
         // when
-        globalTracker.trackEvent(event: event)
+        globalTracker.track(event: event)
         globalTracker.configureTrackers()
 
         // then
@@ -195,7 +195,7 @@ class TrackerAggregatorTests: XCTestCase {
         globalTracker.configureTrackers()
 
         // when
-        globalTracker.trackEvent(event: event)
+        globalTracker.track(event: event)
 
         // then
         let exp = expectation(description: "Test")

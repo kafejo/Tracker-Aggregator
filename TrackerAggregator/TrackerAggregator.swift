@@ -131,7 +131,7 @@ class GlobalTracker {
         didSet {
             if wasConfigured {
                 DispatchQueue.global().async {
-                    self.postponedEvents.forEach { self.trackEvent(event: $0) }
+                    self.postponedEvents.forEach { self.track(event: $0) }
                     self.postponedEvents.removeAll()
                     self.postponedProperties.forEach { self.update(property: $0) }
                     self.postponedProperties.removeAll()
@@ -156,7 +156,7 @@ class GlobalTracker {
         }
     }
 
-    func trackEvent(event: TrackableEvent) {
+    func track(event: TrackableEvent) {
 
         if !wasConfigured {
             postponedEvents.append(event)
@@ -165,11 +165,11 @@ class GlobalTracker {
         }
 
         DispatchQueue.global().async {
-            self._trackEvent(event: event)
+            self._track(event: event)
         }
     }
 
-    private func _trackEvent(event: TrackableEvent) {
+    private func _track(event: TrackableEvent) {
 
         trackers.forEach { tracker in
 
@@ -203,7 +203,7 @@ class GlobalTracker {
         trackers.forEach { tracker in
             let action = {
                 tracker.track(property: property)
-                property.generateUpdateEvents().forEach(self._trackEvent)
+                property.generateUpdateEvents().forEach(self._track)
             }
 
             if let rule = tracker.propertyTrackingRule {
@@ -233,8 +233,8 @@ class GlobalTracker {
     }
 
     /// Track event
-    class func trackEvent(event: TrackableEvent) {
-        shared.trackEvent(event: event)
+    class func track(event: TrackableEvent) {
+        shared.track(event: event)
     }
 
     /// Update property
