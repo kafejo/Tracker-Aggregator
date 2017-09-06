@@ -39,9 +39,17 @@ extension EventTrackable {
     }
 }
 
-protocol TrackerConfigurable {
+protocol TrackerConfigurable: class {
     /// This is called before anything is tracked to configure each tracker. This is being called on background thread!
     func configure()
+
+    var name: String { get }
+}
+
+extension TrackerConfigurable {
+    var name: String {
+        return String(describing: type(of: self))
+    }
 }
 
 protocol Tracker: EventTrackable, PropertyTrackable, TrackerConfigurable {}
@@ -140,10 +148,10 @@ class GlobalTracker {
         }
     }
 
-    private var postponedEvents: [TrackableEvent] = []
-    private var postponedProperties: [TrackableProperty] = []
-
+    var postponedEvents: [TrackableEvent] = []
+    var postponedProperties: [TrackableProperty] = []
     private var trackers: [Tracker] = []
+    var loggingEnabled: Bool = false
 
     func set(trackers: [Tracker]) {
         self.trackers = trackers
@@ -171,18 +179,25 @@ class GlobalTracker {
 
     private func _track(event: TrackableEvent) {
 
-        trackers.forEach { tracker in
+        func trackEvent(event: TrackableEvent, tracker: Tracker) {
+            if self.loggingEnabled {
+                print("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.stringValue)'")
+            }
 
+            tracker.track(event: event)
+        }
+
+        trackers.forEach { tracker in
             if let rule = tracker.eventTrackingRule {
                 let isIncluded = rule.types.contains(where: { type(of: event) == $0 })
 
                 if isIncluded && rule.rule == .allow {
-                    tracker.track(event: event)
+                    trackEvent(event: event, tracker: tracker)
                 } else if !isIncluded && rule.rule == .prohibit {
-                    tracker.track(event: event)
+                    trackEvent(event: event, tracker: tracker)
                 }
             } else {
-                tracker.track(event: event)
+                trackEvent(event: event, tracker: tracker)
             }
         }
     }
@@ -203,6 +218,11 @@ class GlobalTracker {
         trackers.forEach { tracker in
             let action = {
                 tracker.track(property: property)
+
+                if self.loggingEnabled {
+                    print("-[\(tracker.name)]: '\(property.identifier)' UPDATED TO '\(property.trackedValue)'")
+                }
+
                 property.generateUpdateEvents().forEach(self._track)
             }
 
@@ -240,5 +260,15 @@ class GlobalTracker {
     /// Update property
     class func update(property: TrackableProperty) {
         shared.update(property: property)
+    }
+
+    /// Default False
+    class var loggingEnabled: Bool {
+        set {
+            shared.loggingEnabled = newValue
+        }
+        get {
+            return shared.loggingEnabled
+        }
     }
 }
