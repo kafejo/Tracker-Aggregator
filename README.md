@@ -2,7 +2,7 @@
 
 An abstraction layer for analytics in your app.
 
-<img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/graph.png"/>
+<img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/graph@2x.png" width="555"/>
 
 # Why?
 In case you use multiple analytic tools like Mixpanel, Intercom, Segment, Fabric (you name it…), you probably have the tracking code all over your project. Tracker-Aggregator is a simple interface for your project analytics that allows you to simply plug-in third party tools. This mechanism also allows you to easily migrate from one analytics tool to another.
