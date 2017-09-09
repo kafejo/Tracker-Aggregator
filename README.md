@@ -14,7 +14,7 @@ Many tracking tools are able to track events as well as properties (usually call
 Adding new analytic tool is a matter of implementing three simple methods.
 
 #### 🏃 Asynchronous
-Startup time matters. Everything is dispatched to the background, even first setup, and it's up to you when you call it. Every event or property update called before everything is ready are saved in a queue and triggered once the configuration is done.
+Startup time matters. Everything is dispatched to the background, even first setup, and it's up to you when you call it. Every event or property update called before everything is ready is saved in a queue and triggered once the configuration is done.
 
 #### ✍️ Configurable
 You can define what you want to track for each analytics by setting rules. By default, everything is tracked. You can easily allow only certain events to be tracked for your AnalyticsTool1 and at the same time prohibit few events from the whole to be tracked by your AnalyticsTool2.
@@ -29,7 +29,7 @@ Examples:
 
 
 # How does it work?
-Define your events and properties by creating structs and conforming them to TrackableEvent or TrackableProperty. Setup your analytic adapters and plug them into GlobalTracker (acts as a hub that forwards events and properies to plugged adapters). 
+Define your events and properties by creating structs and conforming them to TrackableEvent or TrackableProperty. Setup your analytic adapters and plug them into _GlobalTracker_ (acts as a hub that forwards events and properies to plugged adapters). 
 
 ## Define events
 
@@ -114,10 +114,11 @@ class MixpanelAdapter: AnalyticsAdapter {
 }
 ```
 
-In your AppDelegate, for example, you can now plug-in your adapters to `GlobalTracker`.
+In your AppDelegate, for example, you can now plug-in your adapters to `GlobalTracker` and call `configureAdapters()`.
 
 ```swift
 GlobalTracker.set(adapters: [MixpanelAdapter(token: "abcd")])
+GlobalTracker.configureAdapters()
 ```
 
 ## Rules
