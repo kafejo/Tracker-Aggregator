@@ -1,4 +1,5 @@
-# Tracker Aggregator
+<img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/logo-text@2x.png" width="302" />
+
 An abstraction layer for analytics in your app.
 
 <img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/graph.png"/>
