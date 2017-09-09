@@ -52,7 +52,7 @@ extension TrackerConfigurable {
     }
 }
 
-protocol Tracker: EventTrackable, PropertyTrackable, TrackerConfigurable {}
+protocol AnalyticsAdapter: EventTrackable, PropertyTrackable, TrackerConfigurable {}
 
 struct EventIdentifier {
     let object: String
@@ -65,7 +65,7 @@ struct EventIdentifier {
         self.label = label
     }
 
-    var stringValue: String {
+    var formatted: String {
         if let label = label {
             return "\(object): \(action) - \(label)"
         } else {
@@ -103,6 +103,7 @@ protocol TrackableValueType { }
 extension String: TrackableValueType {}
 extension Bool: TrackableValueType {}
 extension Int: TrackableValueType {}
+extension Double: TrackableValueType {}
 
 protocol TrackableProperty {
     var identifier: String { get }
@@ -150,16 +151,16 @@ class GlobalTracker {
 
     var postponedEvents: [TrackableEvent] = []
     var postponedProperties: [TrackableProperty] = []
-    private var trackers: [Tracker] = []
+    private var adapters: [AnalyticsAdapter] = []
     var loggingEnabled: Bool = false
 
-    func set(trackers: [Tracker]) {
-        self.trackers = trackers
+    func set(adapters: [AnalyticsAdapter]) {
+        self.adapters = adapters
     }
 
-    func configureTrackers() {
+    func configureAdapters() {
         DispatchQueue.global().async {
-            self.trackers.forEach { $0.configure() }
+            self.adapters.forEach { $0.configure() }
             self.wasConfigured = true
         }
     }
@@ -179,15 +180,15 @@ class GlobalTracker {
 
     private func _track(event: TrackableEvent) {
 
-        func trackEvent(event: TrackableEvent, tracker: Tracker) {
+        func trackEvent(event: TrackableEvent, tracker: AnalyticsAdapter) {
             if self.loggingEnabled {
-                print("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.stringValue)'")
+                print("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)'")
             }
 
             tracker.track(event: event)
         }
 
-        trackers.forEach { tracker in
+        adapters.forEach { tracker in
             if let rule = tracker.eventTrackingRule {
                 let isIncluded = rule.types.contains(where: { type(of: event) == $0 })
 
@@ -215,7 +216,7 @@ class GlobalTracker {
     }
 
     private func _update(property: TrackableProperty) {
-        trackers.forEach { tracker in
+        adapters.forEach { tracker in
             let action = {
                 tracker.track(property: property)
 
@@ -243,13 +244,13 @@ class GlobalTracker {
     // MARK: - Public API
 
     /// Plug in trackers
-    class func set(trackers: [Tracker]) {
-        shared.set(trackers: trackers)
+    class func set(adapters: [AnalyticsAdapter]) {
+        shared.set(adapters: adapters)
     }
 
     /// Configure trackers, must be called to be able to track. Event or Property track attepts prior configure are postponed.
-    class func configureTrackers() {
-        shared.configureTrackers()
+    class func configureAdapters() {
+        shared.configureAdapters()
     }
 
     /// Track event
@@ -270,5 +271,19 @@ class GlobalTracker {
         get {
             return shared.loggingEnabled
         }
+    }
+}
+
+// Event triggering shortcut
+extension TrackableEvent {
+    func trigger() {
+        GlobalTracker.track(event: self)
+    }
+}
+
+// Property update shortcut
+extension TrackableProperty {
+    func update() {
+        GlobalTracker.update(property: self)
     }
 }
