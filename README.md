@@ -84,6 +84,35 @@ and now we track it by calling update on it.
 Email(value: "test@test.com").update()
 ```
 
+### Binding Event to Property
+
+You can also bind an event to property by implementing the `func generateUpdateEvents() -> [TrackableEvent]` function. This function is called to generate events after the property is updated.
+
+```swift
+struct EmailChanged: TrackableEvent {
+    let newEmail: String
+    
+    let identifier: EventIdentifier = EventIdentifier(object: "User", action: "Changed", label: "Email")
+    var metadata: [String : Any] { 
+        return ["new_email": newEmail] 
+    }
+}
+
+struct Email: TrackableProperty {
+    let identifier: String = "email"                          // Name of the property
+    let value: String                                         // Our value, whatever type we need. Enums are handy.
+
+    var trackedValue: TrackableValueType { return value }     // How to convert our value to TrackableValueType
+                                                              // String and Int are trackable by default
+    func generateUpdateEvents() -> [TrackableEvent] {
+        let emailChanged = EmailChanged(newEmail: value)
+        return [emailChanged]
+    }
+}
+```
+
+In that way you can just update a email property and the Tracker Aggregator will send the EmailChanged event for you automatically.
+
 ## Plug-in analytics tool
 
 We create simple classes that encapsulate each analytic tool login by conforming them to `AnalyticsAdapter` protocol. 
