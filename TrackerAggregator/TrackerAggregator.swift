@@ -134,12 +134,14 @@ class GlobalTracker {
 
     private static let shared = GlobalTracker()
 
+    private let trackingQueue = DispatchQueue(label: "com.global-tracker.tracking-queue", qos: DispatchQoS.background)
+
     init() {}
 
     private var wasConfigured: Bool = false {
         didSet {
             if wasConfigured {
-                DispatchQueue.global().async {
+                trackingQueue.async {
                     self.postponedEvents.forEach { self.track(event: $0) }
                     self.postponedEvents.removeAll()
                     self.postponedProperties.forEach { self.update(property: $0) }
@@ -159,7 +161,7 @@ class GlobalTracker {
     }
 
     func configureAdapters() {
-        DispatchQueue.global().async {
+        trackingQueue.async {
             self.adapters.forEach { $0.configure() }
             self.wasConfigured = true
         }
@@ -173,7 +175,7 @@ class GlobalTracker {
             return
         }
 
-        DispatchQueue.global().async {
+        trackingQueue.async {
             self._track(event: event)
         }
     }
@@ -210,7 +212,7 @@ class GlobalTracker {
             return
         }
 
-        DispatchQueue.global().async {
+        trackingQueue.async {
             self._update(property: property)
         }
     }
