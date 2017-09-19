@@ -134,7 +134,7 @@ class GlobalTracker {
 
     private static let shared = GlobalTracker()
 
-    private let trackingQueue = DispatchQueue(label: "com.global-tracker.tracking-queue", qos: DispatchQoS.background)
+    private let trackingQueue = DispatchQueue(label: "com.global-tracker.tracking-queue", qos: DispatchQoS.background, attributes: .concurrent)
 
     init() {}
 
