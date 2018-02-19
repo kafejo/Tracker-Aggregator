@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 enum TrackingRule {
     case allow, prohibit
 }
@@ -107,7 +106,7 @@ extension Double: TrackableValueType {}
 
 protocol TrackableProperty {
     var identifier: String { get }
-    var trackedValue: TrackableValueType { get }
+    var trackedValue: TrackableValueType? { get }
 
     func generateUpdateEvents() -> [TrackableEvent]
 }
@@ -138,18 +137,7 @@ class GlobalTracker {
 
     init() {}
 
-    private var wasConfigured: Bool = false {
-        didSet {
-            if wasConfigured {
-                trackingQueue.async {
-                    self.postponedEvents.forEach { self.track(event: $0) }
-                    self.postponedEvents.removeAll()
-                    self.postponedProperties.forEach { self.update(property: $0) }
-                    self.postponedProperties.removeAll()
-                }
-            }
-        }
-    }
+    private var wasConfigured: Bool = false
 
     var postponedEvents: [TrackableEvent] = []
     var postponedProperties: [TrackableProperty] = []
@@ -161,21 +149,30 @@ class GlobalTracker {
     }
 
     func configureAdapters() {
-        trackingQueue.async {
+        trackingQueue.sync {
             self.adapters.forEach { $0.configure() }
             self.wasConfigured = true
+            self.postponedEvents.forEach { self.track(event: $0) }
+            self.postponedProperties.forEach { self.update(property: $0) }
+        }
+
+        trackingQueue.async(flags: .barrier) {
+            self.postponedEvents.removeAll()
+            self.postponedProperties.removeAll()
         }
     }
 
     func track(event: TrackableEvent) {
 
-        if !wasConfigured {
-            postponedEvents.append(event)
+        if !self.wasConfigured {
+            trackingQueue.async(flags: .barrier) {
+                self.postponedEvents.append(event)
+            }
             // Should reschedule to be sent after configuration is complete
             return
         }
 
-        trackingQueue.async {
+        trackingQueue.sync {
             self._track(event: event)
         }
     }
@@ -207,26 +204,27 @@ class GlobalTracker {
 
     func update(property: TrackableProperty) {
 
-        if !wasConfigured {
-            postponedProperties.append(property)
+        if !self.wasConfigured {
+            trackingQueue.async(flags: .barrier) {
+                self.postponedProperties.append(property)
+            }
             return
         }
 
-        trackingQueue.async {
+        trackingQueue.sync {
             self._update(property: property)
         }
     }
 
     private func _update(property: TrackableProperty) {
-        adapters.forEach { tracker in
+
+        self.adapters.forEach { tracker in
             let action = {
                 tracker.track(property: property)
 
                 if self.loggingEnabled {
-                    print("-[\(tracker.name)]: '\(property.identifier)' UPDATED TO '\(property.trackedValue)'")
+                    print("-[\(tracker.name)]: '\(property.identifier)' UPDATED TO '\(property.trackedValue ?? "nil")'")
                 }
-
-                property.generateUpdateEvents().forEach(self._track)
             }
 
             if let rule = tracker.propertyTrackingRule {
@@ -241,6 +239,8 @@ class GlobalTracker {
                 action()
             }
         }
+
+        property.generateUpdateEvents().forEach(self._track)
     }
 
     // MARK: - Public API
