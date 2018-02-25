@@ -185,6 +185,28 @@ class MixpanelAdapter: AnalyticsAdapter {
 
 You can also use `.allow` rule to allow only certain events. The same mechanism works for properies, just define `propertyTrackingRule` in your adapter.
 
+## Exceptions
+
+In case there's a specific way how to track certain property, just use `switch` or `if` on the property and define required tracking code. For example here is how we at Rubicoin handle Intercom tracker properties
+
+```swift
+func track(property: TrackableProperty) {
+
+    switch property {
+    case is Property.Email:
+        let attrs = ICMUserAttributes()
+        attrs.email = property.trackedValue?.stringValue
+        Intercom.updateUser(attrs)
+    case let property as Property.PushNotificationToken:
+        Intercom.setDeviceToken(property.value)
+    default:
+        let attrs = ICMUserAttributes()
+        attrs.customAttributes = [property.identifier: property.trackedValue ?? ""]
+        Intercom.updateUser(attrs)
+    }
+}
+```
+
 # Installation
 Just copy `TrackerAggregator.swift` to your project. Tracker Aggregator is so small (just one file) that it's not worth to use it as a linked framework.
 
