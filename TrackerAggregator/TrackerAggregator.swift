@@ -61,7 +61,9 @@ class GlobalTracker {
     var postponedProperties: [TrackableProperty] = []
     private var adapters: [AnalyticsAdapter] = []
 
-    private var log: ((String) -> Void)?
+    private var log: ((String) -> Void) = { message in
+        print(message)
+    }
     
     enum LoggingLevel {
         case none, info, verbose
@@ -106,13 +108,13 @@ class GlobalTracker {
     private func _track(event: TrackableEvent) {
         func trackEvent(event: TrackableEvent, tracker: AnalyticsAdapter) {
             if self.loggingLevel == .info {
-                log?("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)'")
+                log("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)'")
             } else if self.loggingLevel == .verbose {
                 if event.metadata.count > 0 {
                     let metadata = event.metadata.compactMap { "\($0.key): \($0.value)"}.joined(separator: "\n > ")
-                    log?("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)' \n > \(metadata)")
+                    log("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)' \n > \(metadata)")
                 } else {
-                    log?("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)' (no meta)")
+                    log("-[\(tracker.name)]: EVENT TRIGGERED - '\(event.identifier.formatted)' (no meta)")
                 }
                 
             }
@@ -156,7 +158,7 @@ class GlobalTracker {
                 tracker.track(property: property)
 
                 if self.loggingLevel == .info {
-                    self.log?("-[\(tracker.name)]: '\(property.identifier)' UPDATED TO '\(property.trackedValue ?? "nil")'")
+                    self.log("-[\(tracker.name)]: '\(property.identifier)' UPDATED TO '\(property.trackedValue ?? "nil")'")
                 }
             }
 
