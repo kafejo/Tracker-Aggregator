@@ -5,29 +5,6 @@ An abstraction layer for analytics in your app to help you organise your analyti
 <img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/graph@2x.png" width="555"/>
 
 ```swift
-// MyEvents.swift
-struct Events {
-    struct App {
-        static let name = "App"
-        
-        struct Opened: TrackableEvent {
-            let appName: String
-
-            let identifier = EventIdentifier(object: name, action: "Opened")
-
-            var metadata: [String: Any] {
-                return [
-                    "name": appName
-                ]
-            }
-        }
-    }
-}
-```
-
-```swift
-// Then somewhere in your code
-
 Events.App.Opened(appName: "My App").trigger()
 // Based on your rules it will be sent to your adapters (e.g. Intercom, Firebase, Mixpanel, …)
 ```
@@ -60,18 +37,83 @@ Examples:
 # How does it work?
 Define your events and properties by creating structs and conforming them to TrackableEvent or TrackableProperty. Setup your analytic adapters and plug them into _GlobalTracker_ (acts as a hub that forwards events and properies to plugged adapters). 
 
-## Define events
+## Quick start
 
-To do so you need a struct that conforms to `TrackableEvent` protocol. 
+### Define your events
 
 ```swift
-struct AppOpen: TrackableEvent {
-    let identifier: EventIdentifier = EventIdentifier(object: "App", action: "Open")      // Name of the event 
-    let metadata: [String : Any] = [:]        // Any metadata we need to pass with the event 
+// MyEvents.swift
+struct Events {
+    struct App {
+        static let name = "App"
+        
+        struct Opened: TrackableEvent {
+            let appName: String
+
+            let identifier = EventIdentifier(object: name, action: "Opened")
+
+            var metadata: [String: Any] {
+                return [
+                    "name": appName
+                ]
+            }
+        }
+    }
 }
 ```
 
-In case we want to add a metadata to an event, we simply add new property to the struct and adjust the metadata getter.
+### Create adapters
+
+```swift
+import Mixpanel
+
+class MixpanelAdapter: AnalyticsAdapter {
+
+    private let token: String
+
+    init(token: String) {
+        self.token = token
+    }
+ 
+    // This is called when we start tracking
+    func configure() {
+        _ = Mixpanel.sharedInstance(withToken: token)
+    }
+
+    // This is called when the adapter receives an event
+    func track(event: TrackableEvent) {
+        // Track event in Mixpanel
+        Mixpanel.sharedInstance()?.track(event.identifier.stringValue, properties: event.metadata)
+    }
+
+    // This is called when the adapter receives a property
+    func track(property: TrackableProperty) {
+        // Track property in Mixpanel
+        Mixpanel.sharedInstance()?.people.set(property.identifier, to: property.trackedValue)
+    }
+}
+```
+
+### Start tracking
+
+```swift
+// AppDelegate.swift
+GlobalTracker.startTracking(adapters: [MixpanelAdapter(token: "abcd")])
+```
+
+then somewhere in your code
+
+```swift
+Events.App.Opened(appName: "My App").trigger()
+```
+
+Trigger method just simply calls the event on `GlobalTracker` that forwards it to all plugged analytics adapters if they support it (e.g. Intercom, Firebase, Mixpanel, …). Later you will learn how to setup adapter rules so they receive only some events or properties if needed.
+
+# More Details 
+
+## Defining events
+
+To define an event you need a struct that conforms to `TrackableEvent` protocol. 
 
 ```swift
 struct AppOpen: TrackableEvent {
@@ -84,13 +126,38 @@ struct AppOpen: TrackableEvent {
 }
 ```
 
-Now, to track our `AppOpen` event, we just need to initialize it and call `trigger()`.
+The structure is up to you but I like to do nest it based on the objects / screens. e.g.
 
 ```swift
-AppOpen(timestamp: Date()).trigger()
+struct Events {
+    struct User {
+        static let name = "User"
+        
+        struct LoggedIn: TrackableEvent {
+            let identifier: EventIdentifier(object: name, action: "Logged In")
+        }
+        
+        struct LoggedOut: TrackableEvent {
+            let identifier: EventIdentifier(object: name, action: "Logged Out")
+        }
+        
+        struct ProfileUpdated: TrackableEvent {
+            let newName: String
+            let identifier: EventIdentifier(object: name, action: "Profile Updated")
+            var metadata: [String: Any] {
+                return ["new_name": newName]
+            }
+        }
+    }
+}
 ```
 
-Trigger method just simply calls the event on `GlobalTracker` that forwards it to all plugged analytics adapters if they support it.
+This allow for nice structure (and autocompletion) when triggering events.
+
+```swift
+Events.User.LoggedIn().trigger()
+Events.User.ProfileUpdated(newName: "Alfred").trigger()
+```
 
 ## Track property
 
@@ -101,8 +168,8 @@ struct Email: TrackableProperty {
     let identifier: String = "email"                          // Name of the property
     let value: String                                         // Our value, whatever type we need. Enums are handy.
 
-    var trackedValue: TrackableValueType { return value }     // How to convert our value to TrackableValueType
-                                                              // String and Int are trackable by defaul
+    var trackedValue: TrackableValueType? { return value }     // How to convert our value to TrackableValueType
+                                                             // String and Int are trackable by default
 }
 ```
 
@@ -143,7 +210,7 @@ In that way you can just update a email property and the Tracker Aggregator will
 
 ## Plug-in analytics tool
 
-We create simple classes that encapsulate each analytic tool login by conforming them to `AnalyticsAdapter` protocol. 
+We create simple classes that encapsulate each analytic tool logic by conforming them to `AnalyticsAdapter` protocol. 
 
 ```swift
 import Mixpanel
@@ -152,19 +219,25 @@ class MixpanelAdapter: AnalyticsAdapter {
 
     private let token: String
 
+    // Optional name for nice logs. By default the class name is used (e.g. `MixpanelAdapter`)
+    var name: String { "Mixpanel" }
+    
     init(token: String) {
         self.token = token
     }
  
+    // This method is when the tracking is about to start
     func configure() {
         _ = Mixpanel.sharedInstance(withToken: token)
     }
 
+    // This is called when the adapter receives an event to track
     func track(event: TrackableEvent) {
         // Track event in Mixpanel
         Mixpanel.sharedInstance()?.track(event.identifier.stringValue, properties: event.metadata)
     }
 
+    // This is called when the adapter receives a property to track
     func track(property: TrackableProperty) {
         // Track property in Mixpanel
         Mixpanel.sharedInstance()?.people.set(property.identifier, to: property.trackedValue)
@@ -172,7 +245,7 @@ class MixpanelAdapter: AnalyticsAdapter {
 }
 ```
 
-In your AppDelegate, for example, you can now plug-in your adapters to `GlobalTracker` and call `startTracking(_:)`.
+In your AppDelegate, for example, you can now plug-in your adapters to `GlobalTracker` by calling `startTracking(adapters:)`.
 
 ```swift
 GlobalTracker.startTracking(adapters: [MixpanelAdapter(token: "abcd")])
@@ -210,11 +283,39 @@ class MixpanelAdapter: AnalyticsAdapter {
 }
 ```
 
-You can also use `.allow` rule to allow only certain events. The same mechanism works for properies, just define `propertyTrackingRule` in your adapter.
+There are two types of rules `.allow` or `.prohibit`. 
+
+### Allow
+The adapter only receives events included in the allowed types.
+
+```swift
+let eventTrackingRule: EventTrackingRule? = EventTrackingRule(.allow, types: 
+    [
+        Events.App.Open.self,
+        Events.User.LogIn.self
+    ]
+)
+```
+In this example the tracker will not receive any other event than the 2 defined in the rule.
+
+### Prohibit
+The adapter receives all events beside the events included in the prohibited types.
+
+```swift
+let eventTrackingRule: EventTrackingRule? = EventTrackingRule(.allow, types: 
+    [
+        Events.App.Open.self,
+        Events.User.LogIn.self
+    ]
+)
+```
+In this example the tracker will receive all events but the 2 defined in the rule.
+
+The same mechanism works for properies, just define `propertyTrackingRule` in your adapter.
 
 ## Exceptions
 
-In case there's a specific way how to track certain property, just use `switch` or `if` on the property and define required tracking code. For example here is how we at Rubicoin handle Intercom tracker properties
+In case there's a specific way how to track certain property, just use `switch` or `if` on the property and define required tracking code. For example here is custom handling of Intercom tracker properties
 
 ```swift
 func track(property: TrackableProperty) {
@@ -266,9 +367,9 @@ GlobalTracker.log { message in
 }
 ```
 
-
 # Installation
 Just copy `TrackerAggregator.swift` to your project.
 
 # License
+Developed and maintained by Ales Kocur (ales@spurrapp.com).
 Tracker Aggregator is under MIT license. See the LICENSE file for more info.
