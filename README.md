@@ -1,8 +1,36 @@
 <img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/logo-text@2x.png" width="302" />
 
-An abstraction layer for analytics in your app.
+An abstraction layer for analytics in your app to help you organise your analytics code in your app. Think of it as a local [Rudderstack](https://www.rudderstack.com) or [Segment](https://segment.com).
 
 <img src="https://github.com/kafejo/Tracker-Aggregator/blob/master/Assets/graph@2x.png" width="555"/>
+
+```swift
+// MyEvents.swift
+struct Events {
+    struct App {
+        static let name = "App"
+        
+        struct Opened: TrackableEvent {
+            let appName: String
+
+            let identifier = EventIdentifier(object: name, action: "Opened")
+
+            var metadata: [String: Any] {
+                return [
+                    "name": appName
+                ]
+            }
+        }
+    }
+}
+```
+
+```swift
+// Then somewhere in your code
+
+Events.App.Opened(appName: "My App").trigger()
+// Based on your rules it will be sent to your adapters (e.g. Intercom, Firebase, Mixpanel, …)
+```
 
 # Why?
 In case you use multiple analytic tools like Mixpanel, Intercom, Segment, Fabric (you name it…), you probably have the tracking code all over your project. Tracker-Aggregator is a simple interface for your project analytics that allows you to simply plug-in third party tools. This mechanism also allows you to easily migrate from one analytics tool to another.
@@ -205,6 +233,39 @@ func track(property: TrackableProperty) {
     }
 }
 ```
+
+# Logging
+
+There are 3 logging levels - `.none`, `.info`, `.verbose`. 
+```swift
+GlobalTracker.loggingLevel = .info // default is .none
+```
+
+## Info 
+
+The info prints only the name of the event and where it was sent
+```
+-[Intercom]: EVENT TRIGGERED - 'Event Detail: Viewed'
+```
+
+## Verbose
+Verbose prints also the metadata.
+
+```
+-[Intercom]: EVENT TRIGGERED - 'Event Detail: Viewed' 
+ > event_id: 21421
+ > state: rendering
+```
+
+## Custom Logger
+By default things are just `print()`ed. If you use custom logging system you can easily integrate it by setting your own log callback.
+
+```swift
+GlobalTracker.log { message in
+    SwiftyBeaver.log.info(message) // Log with your favourite logging system
+}
+```
+
 
 # Installation
 Just copy `TrackerAggregator.swift` to your project.
