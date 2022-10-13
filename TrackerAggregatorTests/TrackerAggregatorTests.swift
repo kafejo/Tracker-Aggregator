@@ -56,14 +56,14 @@ struct TestProperty: TrackableProperty {
     let identifier: String = "name"
     let value: String
 
-    var trackedValue: TrackableValueType { return value }
+    var trackedValue: TrackableValueType? { return value }
 }
 
 struct TestUpdateProperty: TrackableProperty {
     let identifier: String = "name2"
     let value: String
 
-    var trackedValue: TrackableValueType { return value }
+    var trackedValue: TrackableValueType? { return value }
 
     func generateUpdateEvents() -> [TrackableEvent] {
         return [TestEvent()]
@@ -91,7 +91,7 @@ class TrackerAggregatorTests: XCTestCase {
         // when
         globalTracker.set(adapters: [testableAdapter])
         globalTracker.configureAdapters()
-        globalTracker.track(event: testEvent)
+
 
         // then
 
@@ -103,6 +103,8 @@ class TrackerAggregatorTests: XCTestCase {
             XCTAssertEqual((testableAdapter.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
             exp.fulfill()
         }
+
+        globalTracker.track(event: testEvent)
 
         self.waitForExpectations(timeout: 2.0)
     }
@@ -116,7 +118,6 @@ class TrackerAggregatorTests: XCTestCase {
         // when
         globalTracker.set(adapters: [testableAdapter])
         globalTracker.configureAdapters()
-        globalTracker.update(property: testProperty)
 
         // then 
 
@@ -128,6 +129,8 @@ class TrackerAggregatorTests: XCTestCase {
             XCTAssertEqual((testableAdapter.trackedProperty?.trackedValue as? String) ?? "", "New Name")
             exp.fulfill()
         }
+
+        globalTracker.update(property: testProperty)
 
         self.waitForExpectations(timeout: 2.0)
     }
@@ -142,7 +145,7 @@ class TrackerAggregatorTests: XCTestCase {
 
         globalTracker.set(adapters: [testableAdapter])
         globalTracker.configureAdapters()
-        globalTracker.update(property: testProperty)
+
 
         // then
         let exp = expectation(description: "Test")
@@ -153,6 +156,8 @@ class TrackerAggregatorTests: XCTestCase {
             XCTAssertEqual((testableAdapter.trackedEvent?.metadata["test"] as? String) ?? "", "m1")
             exp.fulfill()
         }
+
+        globalTracker.update(property: testProperty)
 
         self.waitForExpectations(timeout: 2.0)
     }
@@ -194,9 +199,6 @@ class TrackerAggregatorTests: XCTestCase {
         globalTracker.set(adapters: [testableAdapter])
         globalTracker.configureAdapters()
 
-        // when
-        globalTracker.track(event: event)
-
         // then
         let exp = expectation(description: "Test")
 
@@ -204,6 +206,8 @@ class TrackerAggregatorTests: XCTestCase {
             XCTAssertNotNil(testableAdapter.trackedEvent, "Property wasn't tracked")
             exp.fulfill()
         }
+
+        globalTracker.track(event: event)
 
         self.waitForExpectations(timeout: 2.0)
     }

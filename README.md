@@ -144,11 +144,10 @@ class MixpanelAdapter: AnalyticsAdapter {
 }
 ```
 
-In your AppDelegate, for example, you can now plug-in your adapters to `GlobalTracker` and call `configureAdapters()`.
+In your AppDelegate, for example, you can now plug-in your adapters to `GlobalTracker` and call `startTracking(_:)`.
 
 ```swift
-GlobalTracker.set(adapters: [MixpanelAdapter(token: "abcd")])
-GlobalTracker.configureAdapters()
+GlobalTracker.startTracking(adapters: [MixpanelAdapter(token: "abcd")])
 ```
 
 ## Rules
@@ -208,7 +207,7 @@ func track(property: TrackableProperty) {
 ```
 
 # Installation
-Just copy `TrackerAggregator.swift` to your project. Tracker Aggregator is so small (just one file) that it's not worth to use it as a linked framework.
+Just copy `TrackerAggregator.swift` to your project.
 
 # License
 Tracker Aggregator is under MIT license. See the LICENSE file for more info.
